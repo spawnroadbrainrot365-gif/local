@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 100 * 1024 * 1024 } // 100MB حد أقصى
+    limits: { fileSize: 100 * 1024 * 1024 }
 });
 
 app.use(express.json());
@@ -65,13 +65,25 @@ app.get('/:filename', (req, res) => {
     if (filename === 'favicon.ico') return res.status(204).end();
     if (!fs.existsSync(filePath)) return res.status(404).send('الملف غير موجود');
     
+    // نفحص إذا الطلب من Roblox Executor
     const userAgent = req.headers['user-agent'] || '';
-    const isRoblox = userAgent.includes('Roblox') || userAgent.includes('HttpClient') || userAgent.includes('game:HttpGet') || userAgent.includes('Lua') || userAgent.includes('Synapse') || userAgent.includes('Krnl') || userAgent.includes('Delta') || userAgent.includes('Executor');
+    const isRoblox = userAgent.includes('Roblox') || 
+                     userAgent.includes('HttpClient') || 
+                     userAgent.includes('game:HttpGet') || 
+                     userAgent.includes('Lua') ||
+                     userAgent.includes('Synapse') ||
+                     userAgent.includes('Krnl') ||
+                     userAgent.includes('Delta') ||
+                     userAgent.includes('Executor') ||
+                     userAgent.includes('Script') ||
+                     userAgent.includes('Request');
     
+    // إذا الملف مؤمن والطلب مو من Roblox → امنع
     if (fileData && fileData.secure === true && !isRoblox) {
         return res.status(403).send('🚫 غير مسموح لك برؤية الكود');
     }
     
+    // السماح لجميع الطلبات الأخرى (بما فيها اللي ما نعرفها)
     res.setHeader('Content-Type', 'text/plain');
     res.sendFile(filePath);
 });
@@ -104,6 +116,8 @@ app.get('/files', (req, res) => {
         createdAt: filesDB[key].createdAt,
         rawUrl: `${protocol}://${host}/${key}`
     }));
+    // ترتيب من الأحدث للأقدم
+    files.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     res.json(files);
 });
 
@@ -119,5 +133,5 @@ app.delete('/delete/:filename', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Server running on http://0.0.0.0:${PORT}`);
+    console.log(`✅ Server running on port ${PORT}`);
 });
