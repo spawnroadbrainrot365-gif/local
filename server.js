@@ -52,7 +52,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
     const rawUrl = `${protocol}://${host}/raw/${req.file.filename}`;
-    console.log(`✅ تم رفع: ${req.file.originalname}`);
+    console.log(` تم رفع: ${req.file.originalname}`);
     res.json({ success: true, rawUrl });
 });
 
@@ -75,7 +75,7 @@ app.get('/raw/:filename', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Divine Obfuscator - ممنوع</title>
+    <title>Divine Obfuscator </title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -129,10 +129,10 @@ app.get('/raw/:filename', (req, res) => {
 <body>
     <div class="card">
         <div class="icon">🔒</div>
-        <h1>ممنوع الوصول</h1>
-        <p>هذا الرابط مخصص للتشغيل عبر منفذات Roblox فقط.<br>لا يمكنك رؤية محتوى الكود من المتصفح.</p>
+        <h1>عذرا الملف محمي</h1>
+        <p>لا يمكنك رؤيته ولاكن يمكنك تشغيله في الهاك.</p>
         <p style="font-size: 0.8rem; opacity: 0.7;">Divine Obfuscator | Raw Access Denied</p>
-        <div class="divine">⚡ تم التشفير بواسطة Divine Obfuscator</div>
+        <div class="divine"> تم التشفير بواسطة Divine Obfuscator</div>
     </div>
 </body>
 </html>
