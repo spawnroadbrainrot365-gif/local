@@ -3,27 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رفع ملفات</title>
+    <title>Upload + Logs Monitor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: #0a0f1c;
             font-family: 'Segoe UI', monospace;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
+            color: #b3d0ff;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #2a3a60;
+            padding-bottom: 10px;
+        }
+        .tab {
+            background: #1f2a44;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            color: #b3d0ff;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tab.active {
+            background: #2563eb;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         .card {
             background: #111827;
             border-radius: 1.5rem;
             border: 1px solid #2a3a60;
             padding: 2rem;
-            max-width: 600px;
-            width: 100%;
         }
-        h1 { color: #b3d0ff; margin-bottom: 1rem; text-align: center; }
         .upload-area {
             background: #030712;
             border: 2px dashed #2d4379;
@@ -52,7 +76,7 @@
             display: none;
             word-break: break-all;
         }
-        .result code { color: #9cdcfe; font-family: monospace; }
+        .result code { color: #9cdcfe; }
         .toast {
             position: fixed;
             bottom: 20px;
@@ -65,21 +89,76 @@
             opacity: 0;
             transition: 0.2s;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        th, td {
+            border: 1px solid #2a3a60;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #1f2a44;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .badge.executor { background: #10b981; color: white; }
+        .badge.browser { background: #f59e0b; color: #1a1a2e; }
+        .badge.unknown { background: #6b7c9e; color: white; }
+        .refresh {
+            background: #2563eb;
+            margin-bottom: 1rem;
+            width: auto;
+            padding: 6px 15px;
+        }
     </style>
 </head>
 <body>
-<div class="card">
-    <h1>📁 رفع ملف</h1>
-    <div class="upload-area" id="uploadArea">
-        📂 اضغط لرفع ملف (أي حجم، أي امتداد)
-        <input type="file" id="fileInput" style="display:none">
+<div class="container">
+    <div class="tabs">
+        <button class="tab active" data-tab="upload">📤 رفع ملف</button>
+        <button class="tab" data-tab="logs">📋 مراقبة الطلبات</button>
     </div>
-    <div id="resultBox" class="result"></div>
-    <button id="copyBtn" class="primary" style="display:none">📋 نسخ الرابط</button>
+
+    <!-- تبويب رفع الملفات -->
+    <div id="upload-tab" class="tab-content active">
+        <div class="card">
+            <div class="upload-area" id="uploadArea">
+                📂 اضغط لرفع ملف (أي حجم، أي امتداد)
+                <input type="file" id="fileInput" style="display:none">
+            </div>
+            <div id="resultBox" class="result"></div>
+            <button id="copyBtn" class="primary" style="display:none">📋 نسخ الرابط</button>
+        </div>
+    </div>
+
+    <!-- تبويب الطلبات -->
+    <div id="logs-tab" class="tab-content">
+        <div class="card">
+            <button class="refresh" onclick="fetchLogs()">🔄 تحديث</button>
+            <div style="overflow-x: auto;">
+                <table id="logsTable">
+                    <thead>
+                        <tr><th>الوقت</th><th>الملف</th><th>IP</th><th>User-Agent</th><th>النوع</th></tr>
+                    </thead>
+                    <tbody id="logsBody">
+                        <tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 <div id="toast" class="toast">✅ تم النسخ</div>
 
 <script>
+    // ========== رفع الملفات ==========
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.getElementById('fileInput');
     const resultBox = document.getElementById('resultBox');
@@ -96,14 +175,11 @@
     fileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const formData = new FormData();
         formData.append('file', file);
-
         try {
             const res = await fetch('/upload', { method: 'POST', body: formData });
             const data = await res.json();
-
             if (data.success) {
                 resultBox.innerHTML = `<code>✅ ${data.rawUrl}</code>`;
                 resultBox.style.display = 'block';
@@ -116,10 +192,61 @@
             } else {
                 showToast('❌ فشل الرفع');
             }
-        } catch (err) {
+        } catch(err) {
             showToast('❌ خطأ في الاتصال');
         }
     };
+
+    // ========== جلب الطلبات ==========
+    async function fetchLogs() {
+        try {
+            const res = await fetch('/api/logs');
+            const logs = await res.json();
+            const tbody = document.getElementById('logsBody');
+            tbody.innerHTML = '';
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد طلبات بعد</td></tr>';
+                return;
+            }
+            for (const log of logs) {
+                const ua = log.userAgent || 'unknown';
+                let type = 'unknown';
+                let typeClass = 'unknown';
+                if (ua.includes('Roblox') || ua.includes('Delta') || ua.includes('Synapse') || ua.includes('Krnl') || ua.includes('Solara')) {
+                    type = '⚡ منفذ';
+                    typeClass = 'executor';
+                } else if (ua.includes('Mozilla') || ua.includes('Chrome') || ua.includes('Safari') || ua.includes('Firefox') || ua.includes('Edge')) {
+                    type = '🌐 متصفح';
+                    typeClass = 'browser';
+                }
+                const row = `
+                    <tr>
+                        <td style="white-space: nowrap;">${new Date(log.timestamp).toLocaleString()}</td>
+                        <td><code>${log.filename}</code></td>
+                        <td><code>${log.ip || 'unknown'}</code></td>
+                        <td style="word-break: break-all; max-width: 300px;" title="${ua}">${ua.substring(0, 70)}${ua.length>70?'...':''}</td>
+                        <td><span class="badge ${typeClass}">${type}</span></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    // ========== فعالية التبويبات ==========
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            const tabName = tab.getAttribute('data-tab');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            if (tabName === 'logs') fetchLogs();
+        });
+    });
+
+    fetchLogs();
+    setInterval(fetchLogs, 6000);
 </script>
 </body>
 </html>
