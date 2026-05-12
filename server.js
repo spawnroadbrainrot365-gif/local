@@ -21,14 +21,12 @@ function saveLog(entry) {
     fs.writeFileSync(logsFile, JSON.stringify(logs, null, 2));
 }
 
-// الكشف عن المتصفحات
 function isBrowser(userAgent) {
     if (!userAgent) return true;
     const browsers = ['Mozilla', 'Chrome', 'Safari', 'Firefox', 'Edge', 'Opera', 'MSIE', 'Trident'];
     return browsers.some(b => userAgent.includes(b));
 }
 
-// الكشف عن المنفذات
 function isExecutor(userAgent) {
     if (!userAgent) return false;
     const executors = ['Roblox', 'Delta', 'Synapse', 'Krnl', 'Solara', 'ScriptWare', 'Fluxus', 'Hydrogen', 'Comet', 'Executor'];
@@ -58,29 +56,87 @@ app.post('/upload', upload.single('file'), (req, res) => {
     res.json({ success: true, rawUrl });
 });
 
-// رابط raw مع منع المتصفحات
 app.get('/raw/:filename', (req, res) => {
     const filename = req.params.filename;
     const filePath = path.join(uploadDir, filename);
     const userAgent = req.headers['user-agent'] || 'unknown';
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-    // تسجيل الطلب
-    saveLog({
-        filename,
-        userAgent,
-        ip,
-        timestamp: new Date().toISOString(),
-        fullUrl: req.headers['referer'] || 'direct'
-    });
+    saveLog({ filename, userAgent, ip, timestamp: new Date().toISOString() });
 
     if (!fs.existsSync(filePath)) {
         return res.status(404).send('الملف غير موجود');
     }
 
-    // منع المتصفحات
     if (isBrowser(userAgent) && !isExecutor(userAgent)) {
-        return res.status(403).send('🚫 غير مسموح لك برؤية الكود - هذا الرابط مخصص للتشغيل عبر المنفذات فقط');
+        return res.status(403).send(`
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divine Obfuscator - ممنوع</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a0f1c, #0c1222, #0a0f1c);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', system-ui, monospace;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(18, 25, 45, 0.85);
+            backdrop-filter: blur(16px);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 70, 85, 0.4);
+            padding: 3rem 2rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: #ff6b6b;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            color: #b3d0ff;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .divine {
+            color: #8a9fd8;
+            font-size: 0.8rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid #2a3a60;
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">🔒</div>
+        <h1>ممنوع الوصول</h1>
+        <p>هذا الرابط مخصص للتشغيل عبر منفذات Roblox فقط.<br>لا يمكنك رؤية محتوى الكود من المتصفح.</p>
+        <p style="font-size: 0.8rem; opacity: 0.7;">Divine Obfuscator | Raw Access Denied</p>
+        <div class="divine">⚡ تم التشفير بواسطة Divine Obfuscator</div>
+    </div>
+</body>
+</html>
+        `);
     }
 
     res.setHeader('Content-Type', 'text/plain');
@@ -96,5 +152,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Divine Obfuscator Server running on port ${PORT}`);
 });
