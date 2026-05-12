@@ -164,28 +164,28 @@
 <div class="container">
     <div class="header">
         <h1>Divine Obfuscator</h1>
-        <p>حماية سكربتاتك بتقنية متقدمة</p>
+        <p>حمايه سكربتاتك من الوصول اليها</p>
     </div>
 
     <div class="tabs">
-        <button class="tab active" data-tab="upload">📤 رفع ملف</button>
-        <button class="tab" data-tab="logs">📋 مراقبة الطلبات</button>
+        <button class="tab active" data-tab="upload">رفع ملفات</button>
+        <button class="tab" data-tab="logs">لوق الي يحاولون يدخلون للملفات حقك</button>
     </div>
 
     <div id="upload-tab" class="tab-content active">
         <div class="card">
             <div class="upload-area" id="uploadArea">
-                📂 اضغط لرفع ملف (أي حجم، أي امتداد)
+                رفع ملف
                 <input type="file" id="fileInput" style="display:none">
             </div>
             <div id="resultBox" class="result"></div>
-            <button id="copyBtn" class="primary" style="display:none">📋 نسخ الرابط المحمي</button>
+            <button id="copyBtn" class="primary" style="display:none">نسخ رابط Raw</button>
         </div>
     </div>
 
     <div id="logs-tab" class="tab-content">
         <div class="card">
-            <button class="refresh" onclick="fetchLogs()">🔄 تحديث</button>
+            <button class="refresh" onclick="fetchLogs()" refresh </button>
             <div style="overflow-x: auto;">
                 <table id="logsTable">
                     <thead><tr><th>الوقت</th><th>الملف</th><th>IP</th><th>User-Agent</th><th>النوع</th></tr></thead>
@@ -195,7 +195,7 @@
         </div>
     </div>
 </div>
-<div id="toast" class="toast">✅ تم النسخ</div>
+<div id="toast" class="toast"> تم النسخ</div>
 
 <script>
     const uploadArea = document.getElementById('uploadArea');
@@ -225,11 +225,11 @@
                 copyBtn.style.display = 'block';
                 copyBtn.onclick = async () => {
                     await navigator.clipboard.writeText(data.rawUrl);
-                    showToast('📋 تم نسخ الرابط المحمي');
+                    showToast(' تم نسخ الرابط المحمي');
                 };
-                showToast('✅ تم رفع الملف');
-            } else showToast('❌ فشل الرفع');
-        } catch(err) { showToast('❌ خطأ في الاتصال'); }
+                showToast(' تم رفع الملف');
+            } else showToast(' فشل الرفع');
+        } catch(err) { showToast(' خطأ في الاتصال'); }
     };
 
     async function fetchLogs() {
@@ -243,9 +243,9 @@
                 const ua = log.userAgent || 'unknown';
                 let type = 'unknown', typeClass = 'unknown';
                 if (ua.includes('Roblox') || ua.includes('Delta') || ua.includes('Synapse') || ua.includes('Krnl') || ua.includes('Solara')) {
-                    type = '⚡ منفذ'; typeClass = 'executor';
+                    type = 'هاك'; typeClass = 'executor';
                 } else if (ua.includes('Mozilla') || ua.includes('Chrome') || ua.includes('Safari') || ua.includes('Firefox') || ua.includes('Edge')) {
-                    type = '🌐 متصفح'; typeClass = 'browser';
+                    type = 'حد حاول يدخل على الرابط'; typeClass = 'browser';
                 }
                 tbody.innerHTML += `<tr><td style="white-space:nowrap;">${new Date(log.timestamp).toLocaleString()}</td><td><code>${log.filename}</code></td><td><code>${log.ip || 'unknown'}</code></td><td style="word-break:break-all;max-width:300px;" title="${ua}">${ua.substring(0, 70)}${ua.length>70?'...':''}</td><td><span class="badge ${typeClass}">${type}</span></td></tr>`;
             }
